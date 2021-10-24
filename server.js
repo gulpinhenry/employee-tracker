@@ -18,6 +18,23 @@ const db = mysql.createConnection(
     mainMenu()
 );
 
+function transition(){
+    inquirer.prompt({
+        name: "continue",
+        type: "confirm",
+        message: "Continue?",
+      })
+      .then((res) => {
+          if(res.continue){
+              mainMenu();
+              return;
+          }
+          else{
+              console.log("\n Have a nice day.\n\n");
+              process.exit();
+          }
+      })
+}
 function viewDepartments(){
     let query = "SELECT * FROM department;";
     db.query(query, (err, res)=>{
@@ -25,12 +42,26 @@ function viewDepartments(){
             console.error("Oops! Something went wrong!");
             return;
         }
-        console.log(res);
-        mainMenu();
+        console.table(res);
+        transition();
     });
 }
 function viewRoles(){
-
+    // SELECT roles.id as "Role ID", roles.title as Position, roles.salary AS Salary FROM roles;
+    //  SELECT department.department_name AS Department FROM roles JOIN department ON roles.department_id = department.id;
+    // SELECT roles.id as "Role ID", roles.title as Position, roles.salary AS Salary, department.name AS department FROM roles;
+    //  SELECT department.department_name AS Department FROM roles JOIN department ON roles.department_id = department.id;
+    // let query = `SELECT id as "Role ID", title as Position, salary, department.department_name AS 
+    // Department FROM roles JOIN department ON roles.department_id = department.id FROM roles;` 
+    let query = `SELECT roles.id as "Role ID", roles.title as Position, roles.salary AS Salary, department.department_name AS Department FROM roles JOIN department ON roles.department_id = department.id;`;
+    db.query(query, (err, res)=>{
+        if (err) {
+            console.error("Oops! Something went wrong!");
+            return;
+        }
+        console.table(res);
+        transition();
+    });
 }
 function viewEmployees(){
 
@@ -57,6 +88,7 @@ function mainMenu(){
       name: "main",
       type: "list",
       message: "What would you like to do?",
+      loop: "false",
       choices: [
         "View departments",
         "View roles",
@@ -104,13 +136,6 @@ function mainMenu(){
                 break;
         }
         //mainMenu();
-    }).catch((error) => {
-        if (error.isTtyError) {
-          // Prompt couldn't be rendered in the current environment
-        } else {
-          // Something else went wrong
-        }
-        console.log("done");  
     })
 }
 //console.log("done");
