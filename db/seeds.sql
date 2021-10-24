@@ -25,11 +25,12 @@ VALUES
     ("Regional Sales Manager", 120000, 5),
     ("Sales Representative", 150000, 5);
 
-INSERT INTO employee(first_name, last_name, role_id) 
+INSERT INTO employee(first_name, last_name, role_id, manager_id) 
 VALUES
-    ('Ashley', 'Wang', 14),
-    ('Anakin', 'Trotter', 13),
-    ('Justin', 'Feng', 7),
-    ('John', 'Conlin', 16),
-    ('Meredith', 'Grey', 2),
-    ('Annabelle', 'Choi', 4);
+    ('Ashley', 'Wang', 14, null),
+    ('Anakin', 'Trotter', 13, 1),
+    ('Justin', 'Feng', 7, null),
+    ('John', 'Conlin', 16, 2),
+    ('Meredith', 'Grey', 2, null),
+    ('Annabelle', 'Choi', 4, 2);
+null

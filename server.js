@@ -47,24 +47,58 @@ function viewDepartments(){
     });
 }
 function viewRoles(){
-    // SELECT roles.id as "Role ID", roles.title as Position, roles.salary AS Salary FROM roles;
-    //  SELECT department.department_name AS Department FROM roles JOIN department ON roles.department_id = department.id;
-    // SELECT roles.id as "Role ID", roles.title as Position, roles.salary AS Salary, department.name AS department FROM roles;
-    //  SELECT department.department_name AS Department FROM roles JOIN department ON roles.department_id = department.id;
-    // let query = `SELECT id as "Role ID", title as Position, salary, department.department_name AS 
-    // Department FROM roles JOIN department ON roles.department_id = department.id FROM roles;` 
-    let query = `SELECT roles.id as "Role ID", roles.title as Position, roles.salary AS Salary, department.department_name AS Department FROM roles JOIN department ON roles.department_id = department.id;`;
+    let query = `SELECT roles.id as "Role ID",
+     roles.title as "Job Title", 
+     roles.salary AS Salary, 
+     department.department_name AS Department 
+     FROM roles JOIN department ON roles.department_id = department.id;`;
     db.query(query, (err, res)=>{
         if (err) {
             console.error("Oops! Something went wrong!");
-            return;
         }
-        console.table(res);
+        else{
+            console.table(res);
+        }
         transition();
     });
 }
-function viewEmployees(){
 
+// TO DO
+function viewEmployees(){
+    // how to add manager name with id from the same table
+    //"SELECT employee.first_name, employee.last_name, roles.title, roles.salary, department.department_name, CONCAT(e.first_name, ' ' ,e.last_name) AS Manager FROM employee INNER JOIN roles on roles.id = employee.role_id INNER JOIN department on department.id = roles.department_id left join employee e on employee.manager_id = e.id;"
+    /* SELECT 
+        employee.first_name AS "First Name", 
+        employee.last_name AS "Last Name", 
+        department.department_name AS "Department", 
+        roles.title AS "Position Title", 
+        roles.salary AS "Salary"
+        FROM employee 
+        JOIN roles 
+            ON employee.role_id = roles.id 
+        JOIN department 
+            ON roles.department_id = department.id;
+     */
+    let query = `SELECT 
+    employee.first_name AS "First Name", 
+    employee.last_name AS "Last Name", 
+    department.department_name AS "Department", 
+    roles.title AS "Position Title", 
+    roles.salary AS "Salary"
+    FROM employee 
+    JOIN roles 
+        ON employee.role_id = roles.id 
+    JOIN department 
+        ON roles.department_id = department.id;`;
+    db.query(query, (err, res)=>{
+        if (err) {
+            console.error("Oops! Something went wrong!");
+        }
+        else{
+            console.table(res);
+        }
+        transition();
+    });
 }
 function addDepartment(){
 
