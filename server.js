@@ -101,15 +101,95 @@ function viewEmployees(){
     });
 }
 function addDepartment(){
-
+    inquirer.prompt({
+        name: "dep",
+        type: "input",
+        message: "Add a new department",
+    })
+    .then((res) => {
+        if(res.dep){
+            let query = `
+            INSERT INTO department(department_name)
+            VALUES
+            ("${res.dep}")`;
+            db.query(query, (err)=>{
+                if (err) {
+                    console.error("Oops! Something went wrong!");
+                }
+                else{
+                    console.log("\n\n" + res.dep + " has been added successfully")
+                }
+            });
+        }
+        else{
+            console.log("\n Something went wrong. Please try again\n\n");
+        }
+        transition();
+    })
 }
-function addRole(){
 
+// for adding roles
+function addRoleHelp(){
+    let query = `SELECT * FROM department`;
+    db.query(query, (err, res)=>{
+        if (err) {
+            console.error("Oops! Something went wrong!");
+        }
+        console.log(res);
+        addRole(res.map(({ department_name, id }) => ({ name: department_name, value: id })));
+    });
+}
+function addRole(depArr){
+    inquirer.prompt([
+        {
+            name: "title",
+            type: "input",
+            message: "Add a new role",
+        },
+        {
+            name: "salary",
+            type: "input",
+            message: "Add a salary (USD)",
+            validate: (input)=>{
+                if(!isNaN(input))
+                    return true;
+                else
+                {
+                    console.log("\n Please enter a proper salary");
+                    return false;
+                }
+            }
+        },
+        {
+            name: "dep",
+            type: "list",
+            message: "Select department",
+            choices: depArr
+        }
+    ])
+    .then((res) => {
+
+        let query = `
+        INSERT INTO roles(title, salary, department_id)
+        VALUES
+        ("${res.title}", ${res.salary}, ${res.dep})`;
+        db.query(query, (err)=>{
+            if (err) {
+                console.error("Oops! Something went wrong!");
+            }
+            else{
+                console.log("\n\n" + res.title + " has been added successfully")
+            }
+            transition();
+        });
+        
+        
+        
+    })
+    
+    
 }
 function addEmployee(){
-
-}
-function addDepartment(){
 
 }
 function updateRole(){
@@ -152,13 +232,10 @@ function mainMenu(){
                 addDepartment();
                 break;
             case "Add role":
-                addRole();
+                addRoleHelp();
                 break;
             case "Add employee":
                 addEmployee();
-                break;
-            case "Add department":
-                addDepartment();
                 break;
             case "Update employee role":
                 updateRole();

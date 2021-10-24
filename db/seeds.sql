@@ -33,4 +33,3 @@ VALUES
     ('John', 'Conlin', 16, 2),
     ('Meredith', 'Grey', 2, null),
     ('Annabelle', 'Choi', 4, 2);
-null
