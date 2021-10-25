@@ -1,7 +1,6 @@
 const inquirer = require("inquirer");
 const mysql = require("mysql2");
 const consoleTable = require("console.table");
-const { allowedNodeEnvironmentFlags } = require("process");
 
 const db = mysql.createConnection(
     {
@@ -38,35 +37,17 @@ function transition(){
 function getDepartment(){
     let query = `SELECT * FROM department`;
     return db.promise().query(query);
-        //console.log(res);
-        //return (res.map(({ department_name, id }) => ({ name: department_name, value: id })));
-    //}).then((response)=>{
-
-   // });
 }
-
 function getRoles(){
     let query = `SELECT * FROM roles`;
-    db.query(query, (err, res)=>{
-        if (err) {
-            console.error("Oops! Something went wrong!");
-        }
-        return(res.map(({ title, id }) => ({ name: title, value: id })));
-    })
-    
+    return db.promise().query(query)
 }
 function getEmployees(){
     let query = `SELECT * FROM employee`;
-    db.query(query, (err, res)=>{
-        if (err) {
-            console.error("Oops! Something went wrong");
-        }
-        console.log(res);
-        return(res.map(({ first_name, last_name, id }) => ({ name: first_name + " " + last_name, value: id })));
-    })
+    return db.promise().query(query)
 }
 function viewDepartments(){
-    let query = "SELECT * FROM department;";
+    let query = `SELECT id as ID, department_name as "Department" FROM department;`;
     db.query(query, (err, res)=>{
         if (err) {
             console.error("Oops! Something went wrong!");
@@ -95,31 +76,21 @@ function viewRoles(){
 
 // TO DO
 function viewEmployees(){
-    // how to add manager name with id from the same table
-    //"SELECT employee.first_name, employee.last_name, roles.title, roles.salary, department.department_name, CONCAT(e.first_name, ' ' ,e.last_name) AS Manager FROM employee INNER JOIN roles on roles.id = employee.role_id INNER JOIN department on department.id = roles.department_id left join employee e on employee.manager_id = e.id;"
-    /* SELECT 
-        employee.first_name AS "First Name", 
-        employee.last_name AS "Last Name", 
-        department.department_name AS "Department", 
-        roles.title AS "Position Title", 
-        roles.salary AS "Salary"
-        FROM employee 
-        JOIN roles 
-            ON employee.role_id = roles.id 
-        JOIN department 
-            ON roles.department_id = department.id;
-     */
+
     let query = `SELECT 
     employee.first_name AS "First Name", 
     employee.last_name AS "Last Name", 
     department.department_name AS "Department", 
     roles.title AS "Position Title", 
-    roles.salary AS "Salary"
+    roles.salary AS "Salary",
+    CONCAT(manager.first_name," ", manager.last_name) AS Manager
     FROM employee 
-    JOIN roles 
+    LEFT JOIN roles 
         ON employee.role_id = roles.id 
-    JOIN department 
-        ON roles.department_id = department.id;`;
+    LEFT JOIN department 
+        ON roles.department_id = department.id
+    LEFT JOIN employee manager
+        ON employee.manager_id = manager.id;`;
     db.query(query, (err, res)=>{
         if (err) {
             console.error("Oops! Something went wrong!");
@@ -160,109 +131,164 @@ function addDepartment(){
 
 //TO DO figure out the synchronous
 async function addRole(){
-    let res = await getDepartment()
-    let depArr = res.map(({ department_name, id }) => ({ name: department_name, value: id }));
-    console.log(depArr);
-    inquirer.prompt([
-        {
-            name: "title",
-            type: "input",
-            message: "Add a new role",
-        },
-        {
-            name: "salary",
-            type: "input",
-            message: "Add a salary (USD)",
-            validate: (input)=>{
-                if(!isNaN(input))
-                    return true;
-                else
-                {
-                    console.log("\n Please enter a proper salary");
-                    return false;
+    try{
+        let res = await getDepartment();
+        let depArr = res[0].map(({ department_name, id }) => ({ name: department_name, value: id }));
+        inquirer.prompt([
+            {
+                name: "title",
+                type: "input",
+                message: "Add a new role",
+            },
+            {
+                name: "salary",
+                type: "input",
+                message: "Add a salary (USD)",
+                validate: (input)=>{
+                    if(!isNaN(input))
+                        return true;
+                    else
+                    {
+                        console.log("\n Please enter a proper salary");
+                        return false;
+                    }
                 }
+            },
+            {
+                name: "dep",
+                type: "list",
+                message: "Select department",
+                choices: depArr
             }
-        },
-        {
-            name: "dep",
-            type: "list",
-            message: "Select department",
-            choices: depArr
-        }
-    ])
-    .then((res) => {
+        ])
+        .then((res) => {
 
-        let query = `
-        INSERT INTO roles(title, salary, department_id)
-        VALUES
-        ("${res.title}", ${res.salary}, ${res.dep})`;
-        db.query(query, (err)=>{
-            if (err) {
-                console.error("Oops! Something went wrong!");
-            }
-            else{
-                console.log("\n\n" + res.title + " has been added successfully")
-            }
-            transition();
-        });  
-    })
+            let query = `
+            INSERT INTO roles(title, salary, department_id)
+            VALUES
+            ("${res.title}", ${res.salary}, ${res.dep})`;
+            db.query(query, (err)=>{
+                if (err) {
+                    console.error("Oops! Something went wrong!");
+                }
+                else{
+                    console.log("\n\n" + res.title + " has been added successfully")
+                }
+                transition();
+            });  
+        })
+    }catch(err){
+        console.err("error");
+    }
+    
     
 }
 
 // TO DO figure out the asynchronous
-function addEmployee(){
-    let rolArr = getRoles();
-    let manArr = getEmployees();
-    console.log(rolArr);
-    inquirer.prompt([
-        {
-            name: "first",
-            type: "input",
-            message: "First name:",
-        },
-        {
-            name: "last",
-            type: "input",
-            message: "Last name:",
-        },
-        {
-            name: "role",
-            type: "list",
-            message: "Role:",
-            choices: rolArr
-        },
-        {
-            name: "wantManager",
-            type: "confirm",
-            message: "Add a manager?"
-        },
-        {
-            when: (input) => input.wantManager,
-            name: "manager",
-            type: "list",
-            message: "Manager:",
-            choices: manArr,
-            default: null
-        }
-    ])
-    .then((res) => {
+async function addEmployee(){
+    try{
 
-        let query = `
-        INSERT INTO employee(first_name, last_name, role_id, manager_id)
-        VALUES
-        ("${res.first}", "${res.last}", ${res.role}, ${res.manager})`;
-        db.query(query, (err)=>{
-            if (err) {
-                console.error("Error adding employee");
+        
+        let res = await getRoles();
+        let rolArr = res[0].map(({ title, id }) => ({ name: title, value: id }));
+        res = await getEmployees();
+        let manArr = res[0].map(({ first_name, last_name, id }) => ({ name: first_name + " " + last_name, value: id }))
+        inquirer.prompt([
+            {
+                name: "first",
+                type: "input",
+                message: "First name:",
+            },
+            {
+                name: "last",
+                type: "input",
+                message: "Last name:",
+            },
+            {
+                name: "role",
+                type: "list",
+                message: "Role:",
+                choices: rolArr
+            },
+            {
+                name: "wantManager",
+                type: "confirm",
+                message: "Add a manager?"
+            },
+            {
+                when: (input) => input.wantManager,
+                name: "manager",
+                type: "list",
+                message: "Manager:",
+                choices: manArr,
+                default: null
             }
-            else{
-                console.log("\n\n" + res.title + " has been added successfully")
+        ])
+        .then((res) => {
+            if(!res.manager){
+                res.manager = null;
             }
-            transition();
-        });  
-    })
+            let query = `
+            INSERT INTO employee(first_name, last_name, role_id, manager_id)
+            VALUES
+            ("${res.first}", "${res.last}", ${res.role}, ${res.manager})`;
+            db.query(query, (err)=>{
+                if (err) {
+                    console.error("Error adding employee");
+                }
+                else{
+                    console.log("\n\n" + res.first + " has been added successfully")
+                }
+                transition();
+            });  
+        })
+    }
+    catch(err){
+        console.error("error");
+    }
 }
-function updateRole(){
+async function updateRole(){
+    //get employees
+    try{
+        let res = await getEmployees();
+        let empArr = res[0].map(({ first_name, last_name, id }) => ({ name: first_name + " " + last_name, value: id }))
+        res = await getRoles();
+        let rolArr = res[0].map(({ title, id }) => ({ name: title, value: id }));
+
+        inquirer.prompt([
+            {
+                name: "person",
+                type: "list",
+                message: "Choose which employee to update role:",
+                choices: empArr
+            },
+            {
+                name: "newRole",
+                type: "list",
+                messages: "Assign new role:",
+                choices: rolArr
+            }
+        ]).then((res)=>{
+            let query = `
+            UPDATE employee
+            SET employee.role_id = ${res.newRole}
+            WHERE employee.id = ${res.person}`;
+            db.query(query, (err)=>{
+                if (err) {
+                    console.error("Error adding employee");
+                }
+                else{
+                    console.log("\n\nUpdated successfully")
+                }
+                transition();
+            });  
+        })
+    }
+    catch{
+        console.error("error");
+    }
+    
+
 
 }
 
