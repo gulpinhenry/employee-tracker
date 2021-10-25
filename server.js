@@ -128,7 +128,6 @@ function addDepartment(){
     })
 }
 
-// for adding roles
 function addRoleHelp(){
     let query = `SELECT * FROM department`;
     db.query(query, (err, res)=>{
@@ -181,16 +180,12 @@ function addRole(depArr){
                 console.log("\n\n" + res.title + " has been added successfully")
             }
             transition();
-        });
-        
-        
-        
+        });  
     })
-    
     
 }
 function addEmployee(){
-
+    
 }
 function updateRole(){
 
