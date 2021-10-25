@@ -35,6 +35,36 @@ function transition(){
           }
       })
 }
+function getDepartment(){
+    let query = `SELECT * FROM department`;
+    return db.promise().query(query);
+        //console.log(res);
+        //return (res.map(({ department_name, id }) => ({ name: department_name, value: id })));
+    //}).then((response)=>{
+
+   // });
+}
+
+function getRoles(){
+    let query = `SELECT * FROM roles`;
+    db.query(query, (err, res)=>{
+        if (err) {
+            console.error("Oops! Something went wrong!");
+        }
+        return(res.map(({ title, id }) => ({ name: title, value: id })));
+    })
+    
+}
+function getEmployees(){
+    let query = `SELECT * FROM employee`;
+    db.query(query, (err, res)=>{
+        if (err) {
+            console.error("Oops! Something went wrong");
+        }
+        console.log(res);
+        return(res.map(({ first_name, last_name, id }) => ({ name: first_name + " " + last_name, value: id })));
+    })
+}
 function viewDepartments(){
     let query = "SELECT * FROM department;";
     db.query(query, (err, res)=>{
@@ -128,17 +158,11 @@ function addDepartment(){
     })
 }
 
-function addRoleHelp(){
-    let query = `SELECT * FROM department`;
-    db.query(query, (err, res)=>{
-        if (err) {
-            console.error("Oops! Something went wrong!");
-        }
-        console.log(res);
-        addRole(res.map(({ department_name, id }) => ({ name: department_name, value: id })));
-    });
-}
-function addRole(depArr){
+//TO DO figure out the synchronous
+async function addRole(){
+    let res = await getDepartment()
+    let depArr = res.map(({ department_name, id }) => ({ name: department_name, value: id }));
+    console.log(depArr);
     inquirer.prompt([
         {
             name: "title",
@@ -184,8 +208,59 @@ function addRole(depArr){
     })
     
 }
+
+// TO DO figure out the asynchronous
 function addEmployee(){
-    
+    let rolArr = getRoles();
+    let manArr = getEmployees();
+    console.log(rolArr);
+    inquirer.prompt([
+        {
+            name: "first",
+            type: "input",
+            message: "First name:",
+        },
+        {
+            name: "last",
+            type: "input",
+            message: "Last name:",
+        },
+        {
+            name: "role",
+            type: "list",
+            message: "Role:",
+            choices: rolArr
+        },
+        {
+            name: "wantManager",
+            type: "confirm",
+            message: "Add a manager?"
+        },
+        {
+            when: (input) => input.wantManager,
+            name: "manager",
+            type: "list",
+            message: "Manager:",
+            choices: manArr,
+            default: null
+        }
+    ])
+    .then((res) => {
+
+        let query = `
+        INSERT INTO employee(first_name, last_name, role_id, manager_id)
+        VALUES
+        ("${res.first}", "${res.last}", ${res.role}, ${res.manager})`;
+        db.query(query, (err)=>{
+            if (err) {
+                console.error("Error adding employee");
+            }
+            else{
+                console.log("\n\n" + res.title + " has been added successfully")
+            }
+            transition();
+        });  
+    })
 }
 function updateRole(){
 
@@ -208,11 +283,9 @@ function mainMenu(){
         "Add department",
         "Update employee role",
         "Exit"
-        // delete employee later
       ]
     })
     .then((res) => {
-
         switch (res.main) {
             case "View departments":
                 viewDepartments();
@@ -227,7 +300,7 @@ function mainMenu(){
                 addDepartment();
                 break;
             case "Add role":
-                addRoleHelp();
+                addRole();
                 break;
             case "Add employee":
                 addEmployee();
